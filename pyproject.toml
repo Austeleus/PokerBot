@@ -1,0 +1,7 @@
+[project]
+name = "PokerBot"
+version = "0.0.1"
+
+
+[tool.setuptools]
+packages = ["poker_ai"]

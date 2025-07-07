@@ -5,7 +5,9 @@ pandas
 
 # Poker Environment
 pettingzoo[classic]
-
+eval7  # Hand evaluation library
+pygame
+rlcard
 
 # Utilities
 tqdm

@@ -107,8 +107,20 @@ class CardEncoder:
         if len(card_str) != 2:
             raise ValueError(f"Invalid card string: {card_str}")
         
-        # eval7 expects format like 'As', 'Kh', etc.
-        return eval7.Card(card_str[0].upper() + card_str[1].lower())
+        # Ensure proper format: rank (uppercase) + suit (lowercase)
+        rank = card_str[0].upper()
+        suit = card_str[1].lower()
+        
+        # Validate rank and suit
+        valid_ranks = '23456789TJQKA'
+        valid_suits = 'cdhs'
+        
+        if rank not in valid_ranks:
+            raise ValueError(f"Invalid rank: {rank}")
+        if suit not in valid_suits:
+            raise ValueError(f"Invalid suit: {suit}")
+        
+        return eval7.Card(rank + suit)
     
     def encode_cards(self, cards: List[str]) -> np.ndarray:
         """
@@ -219,16 +231,24 @@ class CardEncoder:
         
         try:
             # eval7 can handle 5-7 cards and finds the best 5-card hand
-            # No need to limit to exactly 5 cards
-            hand_rank = eval7.evaluate(eval7_cards)
+            raw_rank = eval7.evaluate(eval7_cards)
             
-            # Validate the rank
-            if not (1 <= hand_rank <= 7462):
-                # If invalid rank, return default
-                return 7462, 0
+            # Convert eval7's raw rank to standard 1-7462 scale
+            # eval7 range: ~135M (best) down to ~340K (worst)
+            # Standard scale: 1 (best) to 7462 (worst)
+            
+            # Define eval7's observed range
+            EVAL7_BEST = 135004160  # Royal flush  
+            EVAL7_WORST = 340496    # 7-5-4-3-2 offsuit
+            
+            # Linear conversion to 1-7462 scale (inverted since higher eval7 = better)
+            normalized = (raw_rank - EVAL7_WORST) / (EVAL7_BEST - EVAL7_WORST)
+            hand_rank = int(1 + (1 - normalized) * 7461)  # Best eval7 -> rank 1, worst -> 7462
+            
+            # Ensure valid range
+            hand_rank = max(1, min(7462, hand_rank))
             
             # Convert rank to percentile (lower rank is better)
-            # eval7 ranks from 1 (straight flush) to 7462 (high card)
             percentile = int(100 * (7462 - hand_rank) / 7461)
             
             return hand_rank, percentile

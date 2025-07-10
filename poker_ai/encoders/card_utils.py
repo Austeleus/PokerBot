@@ -4,7 +4,13 @@ Card encoding and hand evaluation utilities for poker.
 
 import numpy as np
 from typing import List, Tuple, Dict, Optional
-import eval7
+
+try:
+    import eval7
+    HAS_EVAL7 = True
+except ImportError:
+    HAS_EVAL7 = False
+    eval7 = None
 
 
 class CardEncoder:

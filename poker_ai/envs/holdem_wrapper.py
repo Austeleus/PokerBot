@@ -4,6 +4,7 @@ PettingZoo wrapper for Texas Hold'em poker environment.
 
 from pettingzoo.classic import texas_holdem_no_limit_v6
 import numpy as np
+import logging
 from typing import Dict, List, Tuple, Optional, Any
 
 
@@ -47,6 +48,10 @@ class HoldemWrapper:
         self._pot_size = 0
         self._last_bet = 0
         self._player_chips = {}
+        self._action_history = []  # Track action history for CFR
+        
+        # Logger
+        self.logger = logging.getLogger(__name__)
         
     def reset(self, seed: Optional[int] = None) -> Dict[str, Dict[str, np.ndarray]]:
         """
@@ -63,6 +68,7 @@ class HoldemWrapper:
         self.game_over = False
         self._pot_size = 0
         self._last_bet = 0
+        self._action_history = []  # Reset action history for new game
         
         # Initialize player chips
         for agent in self.agents:
@@ -106,6 +112,9 @@ class HoldemWrapper:
         
         # Convert discrete action to environment action
         env_action = self._discrete_to_env_action(action, current_agent)
+        
+        # Record action in history
+        self._action_history.append(action)
         
         # Execute action
         self.env.step(env_action)
@@ -266,22 +275,33 @@ class HoldemWrapper:
             agent: Agent receiving observation
             
         Returns:
-            Processed observation dictionary
+            Processed observation dictionary with structured card information
         """
         if obs is None:
             return {
                 'observation': np.zeros(54),
                 'action_mask': np.zeros(5),
-                'legal_actions': []
+                'legal_actions': [],
+                'hole_cards': [],
+                'community_cards': [],
+                'action_history': []
             }
         
         # PettingZoo observation is 54-dimensional:
         # - 52 for cards (one-hot)
         # - 2 for player chips
+        observation_vector = obs['observation']
+        
+        # Extract card information from the observation vector
+        hole_cards, community_cards = self._extract_cards_from_observation(observation_vector, agent)
+        
         processed = {
-            'observation': obs['observation'].copy(),
+            'observation': observation_vector.copy(),
             'action_mask': np.zeros(5),  # Our discrete action mask
-            'legal_actions': self._get_legal_actions_from_mask(obs.get('action_mask'))
+            'legal_actions': self._get_legal_actions_from_mask(obs.get('action_mask')),
+            'hole_cards': hole_cards,
+            'community_cards': community_cards,
+            'action_history': getattr(self, '_action_history', [])  # Track action history
         }
         
         # Create discrete action mask
@@ -289,6 +309,113 @@ class HoldemWrapper:
             processed['action_mask'][action] = 1
         
         return processed
+    
+    def _extract_cards_from_observation(self, observation: np.ndarray, agent: str) -> Tuple[List[str], List[str]]:
+        """
+        Extract hole cards and community cards from PettingZoo observation vector.
+        
+        PettingZoo texas_holdem_no_limit_v6 observation format:
+        - First 52 dimensions: Card encoding (0-1 values)
+        - Last 2 dimensions: Chip information (0-100 values)
+        
+        Args:
+            observation: 54-dimensional observation vector
+            agent: Agent name
+            
+        Returns:
+            Tuple of (hole_cards, community_cards) as string lists
+        """
+        hole_cards = []
+        community_cards = []
+        
+        try:
+            # First try to access the underlying RLCard environment for direct card access
+            if hasattr(self.env, '_env') and hasattr(self.env._env, 'env'):
+                rlcard_env = self.env._env.env
+                if hasattr(rlcard_env, 'get_state'):
+                    agent_idx = self.env.agents.index(agent) if agent in self.env.agents else 0
+                    state = rlcard_env.get_state(agent_idx)
+                    
+                    # Extract hand cards
+                    if 'hand' in state:
+                        hole_cards = self._convert_rlcard_hand(state['hand'])
+                    
+                    # Extract public cards
+                    if 'public_cards' in state:
+                        community_cards = self._convert_rlcard_cards(state['public_cards'])
+                    
+                    # If we got cards from RLCard, return them
+                    if hole_cards or community_cards:
+                        return hole_cards, community_cards
+            
+            # Fallback: decode from observation vector
+            # The first 52 dimensions represent card presence
+            card_vector = observation[:52]
+            
+            # Create standard deck mapping
+            suits = ['S', 'H', 'D', 'C']  # Spades, Hearts, Diamonds, Clubs
+            ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K']
+            
+            # Generate all 52 cards in standard order
+            deck = []
+            for suit in suits:
+                for rank in ranks:
+                    deck.append(rank + suit)
+            
+            # Extract cards where observation indicates presence
+            visible_cards = []
+            for i, card_present in enumerate(card_vector):
+                if card_present > 0.5:  # Threshold for card presence
+                    visible_cards.append(deck[i])
+            
+            # For now, assume first 2 visible cards are hole cards, rest are community
+            # This is a simplification - actual game state tracking would be more complex
+            if len(visible_cards) >= 2:
+                hole_cards = visible_cards[:2]
+                community_cards = visible_cards[2:]
+            else:
+                hole_cards = visible_cards
+                community_cards = []
+                
+        except Exception as e:
+            # Fallback to empty lists on any error
+            self.logger.debug(f"Card extraction failed for agent {agent}: {e}")
+            hole_cards = []
+            community_cards = []
+        
+        return hole_cards, community_cards
+    
+    def _convert_rlcard_hand(self, rlcard_hand) -> List[str]:
+        """
+        Convert RLCard hand format to standard card strings.
+        
+        RLCard typically uses Card objects with suit and rank attributes.
+        """
+        cards = []
+        try:
+            for card in rlcard_hand:
+                if hasattr(card, 'suit') and hasattr(card, 'rank'):
+                    # Convert RLCard format to standard format
+                    suit_map = {0: 'S', 1: 'H', 2: 'D', 3: 'C'}
+                    rank_map = {0: 'A', 1: '2', 2: '3', 3: '4', 4: '5', 5: '6', 6: '7', 
+                               7: '8', 8: '9', 9: 'T', 10: 'J', 11: 'Q', 12: 'K'}
+                    
+                    suit = suit_map.get(card.suit, 'S')
+                    rank = rank_map.get(card.rank, 'A')
+                    cards.append(rank + suit)
+                elif isinstance(card, str):
+                    # Already in string format
+                    cards.append(card)
+        except Exception:
+            pass
+        
+        return cards
+    
+    def _convert_rlcard_cards(self, rlcard_cards) -> List[str]:
+        """
+        Convert RLCard public cards format to standard card strings.
+        """
+        return self._convert_rlcard_hand(rlcard_cards)  # Same conversion logic
     
     def _get_default_action(self, action_mask: np.ndarray) -> int:
         """Get a default valid action given PettingZoo's action mask."""
@@ -304,9 +431,41 @@ class HoldemWrapper:
         """Get the current player to act."""
         return self.env.agent_selection if not self.game_over else None
     
+    def current_player(self) -> Optional[str]:
+        """Alias for get_current_player() for backward compatibility."""
+        return self.get_current_player()
+    
     def is_terminal(self) -> bool:
         """Check if the game is in a terminal state."""
         return self.game_over
+    
+    def is_done(self) -> bool:
+        """Alias for is_terminal() for backward compatibility."""
+        return self.is_terminal()
+    
+    def get_final_rewards(self) -> Dict[str, float]:
+        """
+        Get final rewards for all players at end of game.
+        
+        Returns:
+            Dictionary mapping player names to final rewards
+        """
+        # Extract final rewards from the last step
+        final_rewards = {}
+        
+        if self.game_over:
+            # Get rewards from PettingZoo environment
+            for agent in self.agents:
+                if agent in self.env.rewards:
+                    final_rewards[agent] = self.env.rewards[agent]
+                else:
+                    final_rewards[agent] = 0.0
+        else:
+            # Game not finished, return zeros
+            for agent in self.agents:
+                final_rewards[agent] = 0.0
+        
+        return final_rewards
     
     def render(self):
         """Render the current game state."""

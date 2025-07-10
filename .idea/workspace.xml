@@ -4,9 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="1fd66d71-4074-4f86-bf87-4381ac8c4a2f" name="Changes" comment="created project">
+    <list default="true" id="1fd66d71-4074-4f86-bf87-4381ac8c4a2f" name="Changes" comment="Completed phase 1 of the project. Built transformer arch and poker env">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/poker_ai/encoders/card_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/poker_ai/encoders/card_utils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -109,7 +108,15 @@
       <option name="project" value="LOCAL" />
       <updated>1751856218781</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="Completed phase 1 of the project. Built transformer arch and poker env">
+      <option name="closed" value="true" />
+      <created>1751864352686</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1751864352687</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -128,7 +135,8 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="created project" />
-    <option name="LAST_COMMIT_MESSAGE" value="created project" />
+    <MESSAGE value="Completed phase 1 of the project. Built transformer arch and poker env" />
+    <option name="LAST_COMMIT_MESSAGE" value="Completed phase 1 of the project. Built transformer arch and poker env" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/PokerBot$01_parse_hand_histories.coverage" NAME="01_parse_hand_histories Coverage Results" MODIFIED="1750660556058" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/scripts" />

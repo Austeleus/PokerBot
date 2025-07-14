@@ -4,8 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="1fd66d71-4074-4f86-bf87-4381ac8c4a2f" name="Changes" comment="Completed phase 1 of the project. Built transformer arch and poker env">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    <list default="true" id="1fd66d71-4074-4f86-bf87-4381ac8c4a2f" name="Changes" comment="Completed phase 2 of the project. Implemented CFR. Next steps: train and verify.">
+      <change beforePath="$PROJECT_DIR$/poker_ai/agents/cfr_agent.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/poker_ai/agents/tests/test_agents.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/poker_ai/solvers/deep_cfr/convergence_monitor.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/poker_ai/solvers/deep_cfr/exploitability.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/poker_ai/solvers/deep_cfr/info_set_manager.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/poker_ai/solvers/deep_cfr/tests/test_mccfr.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/poker_ai/solvers/deep_cfr/tests/test_trainer.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/poker_ai/solvers/deep_cfr/trainer.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/poker_ai/solvers/deep_cfr/training_controller.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

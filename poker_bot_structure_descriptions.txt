@@ -1,0 +1,67 @@
+POKER‑BOT PROJECT DIRECTORY — FILE & FOLDER DESCRIPTIONS
+==============================================================
+
+poker-bot/               ← Project root
+│
+├── .gitignore           # Patterns for files Git should ignore (venv, *.ckpt, __pycache__)
+├── README.md            # Project overview, setup instructions, quick‑start commands
+├── pyproject.toml       # Package metadata; enables `pip install -e .`
+├── requirements.txt     # Explicit package versions for CUDA, PettingZoo, Hydra, etc.
+│
+├── configs/             # All experiment configs (Hydra/OmegaConf)
+│   ├── envs/
+│   │   └── holdem_3p.yaml    # Game params: num_players=3, blinds, bet sizes, stack depth
+│   ├── deep_cfr/
+│   │   └── default.yaml      # Iterations, traversal count, buffer size, net hyper‑params
+│   └── ppo/
+│       └── default.yaml      # RL fine‑tune hyper‑params (lr, clip, KL coefficient)
+│
+│
+├── notebooks/
+│   └── sanity_checks.ipynb    # EDA & visual debugging (regret curves, attention maps)
+│
+├── poker_ai/            # Primary source package
+│   ├── __init__.py
+│   │
+│   ├── envs/
+│   │   ├── holdem_wrßapper.py  # PettingZoo wrapper → simplified discrete‑bet NLHE env
+│   │   └── tests/
+│   │       └── test_env.py    # Unit tests: legal moves, pot conservation, reset/step
+│   │
+│   ├── encoders/
+│   │   ├── info_set_transformer.py  # Transformer encoder for info sets; heads for advantage/policy
+│   │   ├── card_utils.py            # Card indexing, hand‑strength buckets, mask helpers
+│   │   └── tests/
+│   │       └── test_encoder.py      # Checks forward shape, speed, masking
+│   │
+│   ├── memory/
+│   │   ├── reservoir.py            # O(1) reservoir sampler for Deep CFR memories
+│   │   └── tests/
+│   │       └── test_reservoir.py   # χ² randomness test on sampling
+│   │
+│   ├── solvers/
+│   │   └── deep_cfr/
+│   │       ├── trainer.py          # External‑sampling MCCFR loop using Transformer advantage net
+│   │       ├── evaluator.py        # Exploitability approximation / self‑play metrics
+│   │       └── tests/
+│   │           └── test_traversal.py  # Regression test on Leduc: regret→0
+│   │
+│   ├── agents/
+│   │   ├── base_agent.py          # Abstract Agent API: act(obs) → action
+│   │   ├── random_agent.py        # Uniform random legal action (baseline / env smoke)
+│   │   ├── cfr_agent.py           # Wraps average‑policy net from Deep CFR
+│   │   ├── rl_agent.py            # Actor‑Critic Transformer for PPO fine‑tune
+│   │   └── tests/
+│   │       └── test_agents.py     # Probabilities sum to 1; illegal prob ≈ 0
+│   │
+│   └── utils/
+│       ├── logger.py             # Thin wrapper over tqdm + TensorBoard summary writer
+│       └── seed.py               # Helper to set global numpy/torch/random seeds
+│
+└── scripts/              # Top‑level CLI entry points (run via `python scripts/<file>.py`)
+    ├── 00_env_smoke.py          # Quick sanity: run one random hand, print stacks
+    ├── 10_run_deep_cfr.py       # Stage‑1: train blueprint with Deep CFR
+    ├── 20_eval_blueprint.py     # Evaluate blueprint vs baselines; output bb/100 table
+    ├── 30_convert_to_rl.py      # Transfer Transformer weights → Actor‑Critic model
+    ├── 40_train_rl_finetune.py  # Stage‑2: PPO self‑play fine‑tuning
+    └── 50_eval_final.py         # Final tournament & metrics report
